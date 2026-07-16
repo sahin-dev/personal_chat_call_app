@@ -1,0 +1,28 @@
+name: personal_chat_call_app
+description: Minimal chat, audio call, and video call Flutter app.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  file_picker: ^8.1.7
+  flutter_secure_storage: ^9.2.4
+  flutter_webrtc: ^1.5.2
+  http: ^1.2.2
+  permission_handler: ^11.3.1
+  provider: ^6.1.2
+  socket_io_client: ^3.0.2
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

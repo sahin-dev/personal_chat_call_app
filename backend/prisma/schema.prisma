@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum ChatType {
+  DIRECT
+}
+
+enum MessageType {
+  TEXT
+  FILE
+}
+
+enum ReceiptStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+model User {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String    @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  messages     Message[] @relation("SentMessages")
+  files        File[]
+}
+
+model Chat {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  type           ChatType  @default(DIRECT)
+  participantIds String[]  @db.ObjectId
+  lastMessageId  String?   @db.ObjectId
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  messages       Message[]
+
+  @@index([participantIds])
+}
+
+model Message {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  chatId    String      @db.ObjectId
+  senderId  String      @db.ObjectId
+  type      MessageType
+  text      String?
+  fileId    String?     @db.ObjectId
+  deletedAt DateTime?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  chat      Chat        @relation(fields: [chatId], references: [id])
+  sender    User        @relation("SentMessages", fields: [senderId], references: [id])
+  file      File?       @relation(fields: [fileId], references: [id])
+  receipts  MessageReceipt[]
+
+  @@index([chatId, createdAt])
+  @@index([senderId])
+}
+
+model File {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  uploaderId   String    @db.ObjectId
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  storageKey   String
+  createdAt    DateTime  @default(now())
+  uploader     User      @relation(fields: [uploaderId], references: [id])
+  messages     Message[]
+
+  @@index([uploaderId])
+}
+
+model MessageReceipt {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  messageId String        @db.ObjectId
+  userId    String        @db.ObjectId
+  status    ReceiptStatus @default(SENT)
+  updatedAt DateTime      @updatedAt
+  message   Message       @relation(fields: [messageId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+}

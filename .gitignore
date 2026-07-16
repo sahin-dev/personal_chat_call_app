@@ -1,0 +1,32 @@
+# Environment
+.env
+*.env.local
+
+# Node / NestJS
+node_modules/
+dist/
+coverage/
+uploads/
+.mongo-data/
+.mongo-log/
+.mongo-rs-data/
+.mongo-rs-log/
+
+# Prisma
+*.db
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/Pods/
+android/.gradle/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store
