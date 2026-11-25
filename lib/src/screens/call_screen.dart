@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_state.dart';
 
@@ -17,7 +17,8 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final cubit = context.watch<AppCubit>();
+    final state = cubit.state;
     final hasVideo = state.activeCallHasVideo;
 
     return Scaffold(
@@ -28,7 +29,7 @@ class _CallScreenState extends State<CallScreen> {
             Positioned.fill(
               child: hasVideo
                   ? RTCVideoView(
-                      state.callService.remoteRenderer,
+                      cubit.callService.remoteRenderer,
                       objectFit:
                           RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     )
@@ -48,7 +49,7 @@ class _CallScreenState extends State<CallScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: RTCVideoView(
-                      state.callService.localRenderer,
+                      cubit.callService.localRenderer,
                       mirror: true,
                       objectFit:
                           RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
@@ -67,7 +68,7 @@ class _CallScreenState extends State<CallScreen> {
                       tooltip: _micEnabled ? 'Mute' : 'Unmute',
                       onPressed: () {
                         setState(() => _micEnabled = !_micEnabled);
-                        state.callService.toggleMicrophone(_micEnabled);
+                        cubit.callService.toggleMicrophone(_micEnabled);
                       },
                       icon: Icon(_micEnabled ? Icons.mic : Icons.mic_off),
                     ),
@@ -77,7 +78,7 @@ class _CallScreenState extends State<CallScreen> {
                             _cameraEnabled ? 'Camera off' : 'Camera on',
                         onPressed: () {
                           setState(() => _cameraEnabled = !_cameraEnabled);
-                          state.callService.toggleCamera(_cameraEnabled);
+                          cubit.callService.toggleCamera(_cameraEnabled);
                         },
                         icon: Icon(
                           _cameraEnabled
@@ -91,7 +92,7 @@ class _CallScreenState extends State<CallScreen> {
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: state.endCall,
+                      onPressed: cubit.endCall,
                       icon: const Icon(Icons.call_end),
                     ),
                   ],

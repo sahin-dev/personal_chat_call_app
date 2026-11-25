@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_state.dart';
 import '../models.dart';
@@ -12,7 +12,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final cubit = context.watch<AppCubit>();
+    final state = cubit.state;
 
     return Scaffold(
       appBar: AppBar(
@@ -20,7 +21,7 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           child: UserAvatar(
             user: state.currentUser,
-            online: state.socketService.isConnected,
+            online: cubit.socketService.isConnected,
             radius: 18,
           ),
         ),
@@ -35,13 +36,16 @@ class HomeScreen extends StatelessWidget {
           ),
           IconButton(
             tooltip: 'Refresh chats',
-            onPressed: state.refreshChats,
+            onPressed: cubit.refreshChats,
             icon: const Icon(Icons.refresh),
           ),
           PopupMenuButton<String>(
             tooltip: 'More',
-            onSelected: (value) {
-              if (value == 'logout') state.logout();
+            onSelected: (value) async {
+              if (value != 'logout') return;
+              final navigator = Navigator.of(context);
+              await cubit.logout();
+              navigator.popUntil((route) => route.isFirst);
             },
             itemBuilder: (_) => const [
               PopupMenuItem(
@@ -57,7 +61,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: state.refreshChats,
+        onRefresh: cubit.refreshChats,
         child: state.chats.isEmpty
             ? ListView(
                 children: [
@@ -74,7 +78,7 @@ class HomeScreen extends StatelessWidget {
                     chat: chat,
                     other: other,
                     online: state.isUserOnline(other?.id),
-                    onTap: () => _openChat(context, state, chat),
+                    onTap: () => _openChat(context, cubit, chat),
                   );
                 },
               ),
@@ -98,10 +102,10 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> _openChat(
     BuildContext context,
-    AppState state,
+    AppCubit cubit,
     ChatSummary chat,
   ) async {
-    await state.openChat(chat);
+    await cubit.openChat(chat);
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const ChatScreen()),

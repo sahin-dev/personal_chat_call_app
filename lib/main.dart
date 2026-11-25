@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'src/app_state.dart';
+import 'src/backend_ping_service.dart';
+import 'src/push_notification_service.dart';
 import 'src/screens/auth_screen.dart';
 import 'src/screens/call_screen.dart';
 import 'src/screens/home_screen.dart';
 import 'src/screens/incoming_call_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  BackendPingService.instance.start();
+  unawaited(PushNotificationService.instance.initialize());
   runApp(const ChatCallApp());
 }
 
@@ -19,8 +26,8 @@ class ChatCallApp extends StatelessWidget {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF087F73),
     );
-    return ChangeNotifierProvider(
-      create: (_) => AppState(),
+    return BlocProvider(
+      create: (_) => AppCubit(),
       child: MaterialApp(
         title: 'Chat Call',
         debugShowCheckedModeBanner: false,
@@ -50,7 +57,7 @@ class ChatCallApp extends StatelessWidget {
           ),
         ),
         builder: (context, child) {
-          final state = context.watch<AppState>();
+          final state = context.watch<AppCubit>().state;
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -73,7 +80,7 @@ class AppRoot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final state = context.watch<AppCubit>().state;
     if (!state.sessionInitialized) return const _SessionLoadingScreen();
     return state.isAuthenticated ? const HomeScreen() : const AuthScreen();
   }

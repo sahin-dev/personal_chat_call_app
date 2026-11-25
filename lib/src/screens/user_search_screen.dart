@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_state.dart';
 import '../models.dart';
@@ -24,7 +24,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().searchUsers('');
+      context.read<AppCubit>().searchUsers('');
     });
   }
 
@@ -37,7 +37,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final state = context.watch<AppCubit>().state;
 
     return Scaffold(
       appBar: AppBar(title: const Text('New conversation')),
@@ -115,7 +115,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     setState(() => _query = value);
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) context.read<AppState>().searchUsers(value);
+      if (mounted) context.read<AppCubit>().searchUsers(value);
     });
   }
 
@@ -123,13 +123,13 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     _debounce?.cancel();
     _controller.clear();
     setState(() => _query = '');
-    context.read<AppState>().searchUsers('');
+    context.read<AppCubit>().searchUsers('');
   }
 
   Future<void> _openUser(AppUser user) async {
-    final state = context.read<AppState>();
-    await state.openDirectChat(user);
-    if (!mounted || state.activeChat == null) return;
+    final cubit = context.read<AppCubit>();
+    await cubit.openDirectChat(user);
+    if (!mounted || cubit.state.activeChat == null) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const ChatScreen()),
     );

@@ -48,6 +48,8 @@ class SocketService {
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
+          .enableForceNew()
+          .disableMultiplex()
           .setAuth({'token': token})
           .build(),
     );

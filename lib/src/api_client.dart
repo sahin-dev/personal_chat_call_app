@@ -115,6 +115,42 @@ class ApiClient {
     await _request('POST', '/chats/$chatId/read');
   }
 
+  Future<void> registerPushToken({
+    required String token,
+    required String platform,
+    String? deviceId,
+  }) async {
+    await _request(
+      'POST',
+      '/push-tokens',
+      body: {
+        'token': token,
+        'platform': platform,
+        if (deviceId != null) 'deviceId': deviceId,
+      },
+    );
+  }
+
+  Future<void> unregisterPushToken(
+    String token, {
+    String? accessTokenOverride,
+  }) async {
+    await _request(
+      'DELETE',
+      '/push-tokens',
+      body: {'token': token},
+      accessTokenOverride: accessTokenOverride,
+    );
+  }
+
+  Future<List<IceServer>> iceServers() async {
+    final json = await _request('GET', '/calls/ice-servers');
+    final iceServers = json['iceServers'] as List<dynamic>? ?? const [];
+    return iceServers
+        .map((item) => IceServer.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<SharedFile> uploadFile(
     File file, {
     void Function(double progress)? onProgress,
@@ -138,14 +174,16 @@ class ApiClient {
     String path, {
     Object? body,
     bool authenticated = true,
+    String? accessTokenOverride,
   }) async {
-    if (authenticated && accessToken == null) {
+    final token = accessTokenOverride ?? accessToken;
+    if (authenticated && token == null) {
       throw ApiException('Missing access token');
     }
 
     final uri = Uri.parse('${AppConfig.apiBaseUrl}$path');
     final request = http.Request(method, uri)
-      ..headers.addAll(_headers())
+      ..headers.addAll(_headers(accessTokenOverride: accessTokenOverride))
       ..body = body == null ? '' : jsonEncode(body);
     final response = await _client.send(request);
     final responseBody = await response.stream.bytesToString();
@@ -157,10 +195,14 @@ class ApiClient {
     return responseBody.isEmpty ? null : jsonDecode(responseBody);
   }
 
-  Map<String, String> _headers({bool jsonContent = true}) {
+  Map<String, String> _headers({
+    bool jsonContent = true,
+    String? accessTokenOverride,
+  }) {
+    final token = accessTokenOverride ?? accessToken;
     return {
       if (jsonContent) 'Content-Type': 'application/json',
-      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      if (token != null) 'Authorization': 'Bearer $token',
     };
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "272131036053",
+    "project_id": "personal-chat-call",
+    "storage_bucket": "personal-chat-call.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:272131036053:android:419967b562d00def599c9c",
+        "android_client_info": {
+          "package_name": "com.personalchatcall.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVA7HSaFA84BcXVyP35iCdYMi8zagfuMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

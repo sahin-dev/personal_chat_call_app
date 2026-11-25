@@ -1,5 +1,6 @@
 import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
 
+import 'models.dart';
 import 'socket_service.dart';
 
 class CallService {
@@ -16,12 +17,10 @@ class CallService {
   final localRenderer = webrtc.RTCVideoRenderer();
   final remoteRenderer = webrtc.RTCVideoRenderer();
 
-  static const _configuration = {
-    'iceServers': [
-      {'urls': 'stun:stun.l.google.com:19302'},
-      {'urls': 'stun:stun1.l.google.com:19302'},
-    ],
-  };
+  static const _fallbackIceServers = [
+    {'urls': 'stun:stun.l.google.com:19302'},
+    {'urls': 'stun:stun1.l.google.com:19302'},
+  ];
 
   Future<void> initializeRenderers() async {
     if (_renderersInitialized) return;
@@ -45,11 +44,17 @@ class CallService {
   Future<void> createPeerConnection({
     required String receiverId,
     required String callId,
+    required List<IceServer> iceServers,
   }) async {
     await _peerConnection?.close();
     _pendingIceCandidates.clear();
     _remoteDescriptionSet = false;
-    _peerConnection = await webrtc.createPeerConnection(_configuration);
+    final configuration = {
+      'iceServers': iceServers.isEmpty
+          ? _fallbackIceServers
+          : iceServers.map((server) => server.toJson()).toList(),
+    };
+    _peerConnection = await webrtc.createPeerConnection(configuration);
     for (final track
         in localStream?.getTracks() ?? <webrtc.MediaStreamTrack>[]) {
       await _peerConnection!.addTrack(track, localStream!);

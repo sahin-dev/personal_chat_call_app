@@ -2,6 +2,41 @@ enum MessageKind { text, file }
 
 enum MessageReceiptStatus { sending, sent, delivered, seen, failed }
 
+class IceServer {
+  const IceServer({
+    required this.urls,
+    this.username,
+    this.credential,
+  });
+
+  final Object urls;
+  final String? username;
+  final String? credential;
+
+  Map<String, Object> toJson() {
+    return {
+      'urls': urls,
+      if (username != null) 'username': username!,
+      if (credential != null) 'credential': credential!,
+    };
+  }
+
+  factory IceServer.fromJson(Map<String, dynamic> json) {
+    final rawUrls = json['urls'];
+    final urls = switch (rawUrls) {
+      String value => value,
+      List<dynamic> value => value.whereType<String>().toList(),
+      _ => throw const FormatException('Invalid ICE server urls'),
+    };
+
+    return IceServer(
+      urls: urls,
+      username: json['username'] as String?,
+      credential: json['credential'] as String?,
+    );
+  }
+}
+
 class MessageReceipt {
   const MessageReceipt({required this.userId, required this.status});
 
@@ -11,7 +46,7 @@ class MessageReceipt {
   factory MessageReceipt.fromJson(Map<String, dynamic> json) {
     final rawStatus = json['status'] as String? ?? 'SENT';
     return MessageReceipt(
-      userId: json['userId'] as String,
+      userId: _readRequiredId(json, const ['userId', 'user']),
       status: switch (rawStatus) {
         'READ' => MessageReceiptStatus.seen,
         'DELIVERED' => MessageReceiptStatus.delivered,
@@ -36,7 +71,7 @@ class AppUser {
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
-      id: json['id'] as String,
+      id: _readRequiredId(json, const ['id', '_id']),
       name: json['name'] as String,
       email: json['email'] as String,
       avatarUrl: json['avatarUrl'] as String?,
@@ -100,6 +135,10 @@ class ChatMessage {
   final double? uploadProgress;
 
   bool get isDeleted => deletedAt != null;
+
+  bool isFromUser(AppUser? user) {
+    return user != null && _normalizeId(senderId) == _normalizeId(user.id);
+  }
 
   MessageReceiptStatus get recipientStatus {
     if (localStatus != null) return localStatus!;
@@ -180,9 +219,9 @@ class ChatMessage {
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
-      id: json['id'] as String,
-      chatId: json['chatId'] as String,
-      senderId: json['senderId'] as String,
+      id: _readRequiredId(json, const ['id', '_id']),
+      chatId: _readRequiredId(json, const ['chatId', 'chat']),
+      senderId: _readRequiredId(json, const ['senderId', 'sender']),
       type: (json['type'] as String) == 'FILE'
           ? MessageKind.file
           : MessageKind.text,
@@ -232,7 +271,7 @@ class ChatSummary {
 
   factory ChatSummary.fromJson(Map<String, dynamic> json) {
     return ChatSummary(
-      id: json['id'] as String,
+      id: _readRequiredId(json, const ['id', '_id']),
       participants: (json['participants'] as List<dynamic>)
           .map((item) => AppUser.fromJson(item as Map<String, dynamic>))
           .toList(),
@@ -243,6 +282,27 @@ class ChatSummary {
     );
   }
 }
+
+String _readRequiredId(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+    final id = _readId(value);
+    if (id != null && id.isNotEmpty) return id;
+  }
+  throw FormatException('Missing id field. Expected one of: ${keys.join(', ')}');
+}
+
+String? _readId(Object? value) {
+  if (value == null) return null;
+  if (value is String) return value;
+  if (value is Map) {
+    final map = Map<String, dynamic>.from(value);
+    return _readId(map['id']) ?? _readId(map['_id']);
+  }
+  return value.toString();
+}
+
+String _normalizeId(String value) => value.trim();
 
 class AuthSession {
   const AuthSession({required this.user, required this.accessToken});

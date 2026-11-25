@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_state.dart';
 import '../config.dart';
@@ -29,7 +29,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final cubit = context.watch<AppCubit>();
+    final state = cubit.state;
     final other = _otherParticipant(state);
     final online = state.isUserOnline(other?.id);
 
@@ -77,14 +78,14 @@ class _ChatScreenState extends State<ChatScreen> {
             tooltip: 'Audio call',
             onPressed: other == null
                 ? null
-                : () => state.startCall(other, video: false),
+                : () => cubit.startCall(other, video: false),
             icon: const Icon(Icons.call),
           ),
           IconButton(
             tooltip: 'Video call',
             onPressed: other == null
                 ? null
-                : () => state.startCall(other, video: true),
+                : () => cubit.startCall(other, video: true),
             icon: const Icon(Icons.videocam),
           ),
         ],
@@ -106,8 +107,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           final messageIndex =
                               state.activeMessages.length - 1 - index;
                           final message = state.activeMessages[messageIndex];
-                          final mine =
-                              message.senderId == state.currentUser?.id;
+                          final mine = message.isFromUser(state.currentUser);
                           final showDate = messageIndex == 0 ||
                               !_sameDay(
                                 state
@@ -207,7 +207,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text;
     final attachment = _attachment;
     if (attachment == null) {
-      context.read<AppState>().sendText(text);
+      context.read<AppCubit>().sendText(text);
       _messageController.clear();
       return;
     }
@@ -219,7 +219,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
     });
     unawaited(
-      context.read<AppState>().sendFile(File(path), caption: text),
+      context.read<AppCubit>().sendFile(File(path), caption: text),
     );
   }
 
@@ -379,8 +379,8 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final color = mine ? colors.primaryContainer : colors.surface;
-    final maxWidth = (MediaQuery.sizeOf(context).width * 0.78)
-        .clamp(220.0, 340.0)
+    final maxWidth = (MediaQuery.sizeOf(context).width * 0.72)
+        .clamp(0.0, 320.0)
         .toDouble();
 
     return Align(
@@ -408,39 +408,41 @@ class _MessageBubble extends StatelessWidget {
                   mine && !message.isDeleted && message.localStatus == null
                       ? () => _delete(context)
                       : null,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(11, 9, 11, 7),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _content(context),
-                    const SizedBox(height: 3),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _formatMessageTime(message.createdAt),
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                  fontSize: 10,
-                                ),
-                          ),
-                          if (mine) ...[
-                            const SizedBox(width: 4),
-                            _MessageStatusIndicator(
-                              status: message.recipientStatus,
+              child: IntrinsicWidth(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _content(context),
+                      const SizedBox(height: 2),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _formatMessageTime(message.createdAt),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: colors.onSurfaceVariant,
+                                    fontSize: 10,
+                                  ),
                             ),
+                            if (mine) ...[
+                              const SizedBox(width: 4),
+                              _MessageStatusIndicator(
+                                status: message.recipientStatus,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -637,7 +639,7 @@ class _MessageBubble extends StatelessWidget {
           ),
           onTap: () {
             Navigator.of(sheetContext).pop();
-            context.read<AppState>().deleteMessage(message.id);
+            context.read<AppCubit>().deleteMessage(message.id);
           },
         ),
       ),

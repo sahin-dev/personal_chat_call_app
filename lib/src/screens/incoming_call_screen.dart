@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_state.dart';
 
@@ -8,7 +8,8 @@ class IncomingCallScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final cubit = context.watch<AppCubit>();
+    final state = cubit.state;
     final caller = state.incomingCaller;
     final call = state.incomingCall;
     final isVideo = call?['type'] == 'VIDEO';
@@ -56,7 +57,7 @@ class IncomingCallScreen extends StatelessWidget {
                         foregroundColor: Colors.white,
                         fixedSize: const Size.square(64),
                       ),
-                      onPressed: state.rejectIncomingCall,
+                      onPressed: cubit.rejectIncomingCall,
                       icon: const Icon(Icons.call_end, size: 30),
                     ),
                     const SizedBox(width: 36),
@@ -67,7 +68,7 @@ class IncomingCallScreen extends StatelessWidget {
                         foregroundColor: Colors.white,
                         fixedSize: const Size.square(64),
                       ),
-                      onPressed: state.acceptIncomingCall,
+                      onPressed: cubit.acceptIncomingCall,
                       icon: const Icon(Icons.call, size: 30),
                     ),
                   ],

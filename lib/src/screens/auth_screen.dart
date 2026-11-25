@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_state.dart';
 
@@ -30,7 +30,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
+    final state = context.watch<AppCubit>().state;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
@@ -224,7 +224,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _changeMode(bool registering) {
-    context.read<AppState>().clearError();
+    context.read<AppCubit>().clearError();
     setState(() {
       _registering = registering;
       _obscurePassword = true;
@@ -233,12 +233,12 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _submit() async {
-    if (context.read<AppState>().loading ||
+    if (context.read<AppCubit>().state.loading ||
         !(_formKey.currentState?.validate() ?? false)) {
       return;
     }
     FocusScope.of(context).unfocus();
-    final state = context.read<AppState>();
+    final state = context.read<AppCubit>();
     if (_registering) {
       await state.register(
         _nameController.text.trim(),
